@@ -102,14 +102,18 @@ api.add_resource(Planets, '/planets')
 
 class Missions(Resource):
     def post(self):
-        new_mission = Mission(
-            name=request.get_json()["name"],
-            scientist_id=request.get_json()["scientist_id"],
-            planet_id=request.get_json()["planet_id"])
-        db.session.add(new_mission)
-        db.session.commit()
+        try:
+            new_mission = Mission(
+                name=request.get_json()["name"],
+                scientist_id=request.get_json()["scientist_id"],
+                planet_id=request.get_json()["planet_id"])
+            db.session.add(new_mission)
+            db.session.commit()
 
-        return make_response(new_mission.to_dict(), 200)
+            return make_response(new_mission.to_dict(), 201)
+        except ValueError:
+            return make_response({"errors": ["validation errors"]}, 400)
+
 api.add_resource(Missions, '/missions')
 
 
