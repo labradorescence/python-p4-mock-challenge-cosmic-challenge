@@ -17,6 +17,52 @@ metadata = MetaData(naming_convention=convention)
 db = SQLAlchemy(metadata=metadata)
 
 
+# class Planet(db.Model, SerializerMixin):
+#     __tablename__ = 'planets'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     distance_from_earth = db.Column(db.Integer)
+#     nearest_star = db.Column(db.String)
+
+#     # Add relationship
+
+#     # Add serialization rules
+
+
+# class Scientist(db.Model, SerializerMixin):
+#     __tablename__ = 'scientists'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     field_of_study = db.Column(db.String)
+
+#     # Add relationship
+
+#     # Add serialization rules
+
+#     # Add validation
+
+
+# class Mission(db.Model, SerializerMixin):
+#     __tablename__ = 'missions'
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+
+#     # Add relationships
+
+#     # Add serialization rules
+
+#     # Add validation
+
+
+# # add any models you may need.
+
+
+#models.py
+#imports
+
 class Planet(db.Model, SerializerMixin):
     __tablename__ = 'planets'
 
@@ -26,9 +72,11 @@ class Planet(db.Model, SerializerMixin):
     nearest_star = db.Column(db.String)
 
     # Add relationship
+    missions = db.relationship(
+        "Mission", backref="planet", cascade="all, delete")
 
     # Add serialization rules
-
+    serialize_rules = ("-missions.planet", )
 
 class Scientist(db.Model, SerializerMixin):
     __tablename__ = 'scientists'
@@ -38,10 +86,24 @@ class Scientist(db.Model, SerializerMixin):
     field_of_study = db.Column(db.String)
 
     # Add relationship
+    missions = db.relationship(
+        "Mission", backref="scientist", cascade="all, delete")
 
     # Add serialization rules
+    serialize_rules = ("-missions.scientist", )
 
     # Add validation
+    @validates("name")
+    def validate_name(self, key, name):
+        if not name or len(name) < 1:
+            raise ValueError("Name must exist.")
+        return name
+    
+    @validates("field_of_study")
+    def validate_field_of_study(self, key, field_of_study):
+        if not field_of_study or len(field_of_study) < 1 :
+            raise ValueError("Field of study must exist.")
+        return field_of_study
 
 
 class Mission(db.Model, SerializerMixin):
@@ -51,10 +113,30 @@ class Mission(db.Model, SerializerMixin):
     name = db.Column(db.String)
 
     # Add relationships
+    planet_id = db.Column(db.Integer, db.ForeignKey("planets.id")) 
+    scientist_id = db.Column(db.Integer, db.ForeignKey("scientists.id"))
 
     # Add serialization rules
+    serialize_rules = ("-scientist.missions", "-planet.missions", )
 
     # Add validation
+    @validates("name")
+    def validate_name(self, key, name):
+        if not name or len(name) < 1:
+            raise ValueError("Name must exist.")
+        return name
+    
+    @validates("planet_id")
+    def validate_planet_id(self, key, planet_id):
+        if planet_id is not None:
+            return planet_id
+        raise ValueError('Mission must have planet ID.')
+
+    @validates("scientist_id")
+    def validate_scientist_id(self, key, scientist_id):
+        if scientist_id is not None:
+            return scientist_id
+        raise ValueError('Mission must have scientist ID.')
 
 
 # add any models you may need.
