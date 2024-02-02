@@ -20,10 +20,19 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
+api = Api(app)
 
 @app.route('/')
 def home():
     return ''
+
+class Scientists(Resource):
+    def get(self):
+        scientists = [ scientist.to_dict(rules = ("-missions", )) for scientist in Scientist.query.all()]
+
+        return make_response(scientists, 200)
+
+api.add_resource(Scientists, "/scientists") #route
 
 
 if __name__ == '__main__':
